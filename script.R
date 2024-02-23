@@ -54,7 +54,7 @@ for(i in 1:dim(driver)[1]){
   prec <- append(prec, tmp[[1]])
 }
 
-prep <- prep *(60*60*24) # convert to mm s^-1 to mm d^-1
+prec <- prec *(60*60*24) # convert to mm s^-1 to mm d^-1
 
 df$prec <- prec
 
