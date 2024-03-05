@@ -1,0 +1,66 @@
+library(here)
+library(raster)
+extract_soil_mosture_geo <- function(geo_row, x_delta = 0.025 , y_delta = 0.025, x_len = 24, y_len = 25){
+
+  x_coord = geo_row[[1]]
+  y_coord = geo_row[[2]]
+  sitename = geo_row[[3]]
+
+  xy = NULL
+  x = seq(x_coord-x_delta, x_coord+x_delta, length.out = x_len)
+  y = seq(y_coord-y_delta, y_coord+y_delta, length.out = y_len)
+  for(xi in 1:x_len){
+    for(yi in 1:y_len){
+      tmp = data.frame(x= x[xi],y= y[yi])
+      xy = rbind(xy,tmp)
+    }}
+  f = extract(data, SpatialPoints(xy), sp = TRUE)
+  df = as.data.frame(table(f[[1]]))
+  df[2] = df[2]/sum(df[2])
+  colnames(df) = c("soil","frequency")
+  df$sitename = sitename
+  return(df)
+}
+
+geo <- readRDS(here("data","site_coordinates.rds"))
+
+# repeat 5 times for depth (0, 30, 60, 100, 200)
+
+data = raster(here("data","sol_texture_0cm.tif"))
+soil_0 = NULL
+for(i in 1:dim(geo)[1]){
+  soil_df = rbind(soil_df,extract_soil_mosture_geo(geo[i,]))
+}
+soil_0$depth <- 0
+
+data = raster(here("data","sol_texture_30cm.tif"))
+soil_30 = NULL
+for(i in 1:dim(geo)[1]){
+  soil_df = rbind(soil_df,extract_soil_mosture_geo(geo[i,]))
+}
+soil_30$depth <- 30
+
+data = raster(here("data","sol_texture_60cm.tif"))
+soil_60 = NULL
+for(i in 1:dim(geo)[1]){
+  soil_df = rbind(soil_df,extract_soil_mosture_geo(geo[i,]))
+}
+soil_60$depth <- 60
+
+data = raster(here("data","sol_texture_100cm.tif"))
+soil_100 = NULL
+for(i in 1:dim(geo)[1]){
+  soil_df = rbind(soil_df,extract_soil_mosture_geo(geo[i,]))
+}
+soil_100$depth <- 100
+
+data = raster(here("data","sol_texture_200cm.tif"))
+soil_200 = NULL
+for(i in 1:dim(geo)[1]){
+  soil_df = rbind(soil_df,extract_soil_mosture_geo(geo[i,]))
+}
+soil_200$depth <- 200
+
+soil_texture <- rbind(soil_0,soil_10,soil_30,soil_100,soil_200)
+
+saverds(soil_texture,here("data","soil_texture.rds"))
