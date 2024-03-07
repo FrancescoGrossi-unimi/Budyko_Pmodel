@@ -118,4 +118,23 @@ forcing_lcolum_missing = apply(bool_forcing, 2, sum)
 print(forcing_lcolum_missing)
 
 # the net radiation seems to be the problem, having 146730 values missing
-# gpp, which is the second-most column whit missing values, has 6205 of them
+# gpp, which is the second-most column whit missing values, has 6205 of them.
+
+# the gray site in world map (see vignette) are in russia (RU) china (CN)
+# japan (JP) australia (AU) and myamar (not sure) (MY).
+
+east_site = c("AU-Cpr", "AU-Cum", "AU-Dry", "AU-Emr", "AU-How", "AU-RDF", "AU-Rig",
+              "AU-Stp", "CN-Cng","CN-Du2", "JP-SMF", "RU-Che", "AU-ASM", "AU-Ade",
+              "AU-DaP", "AU-DaS", "AU-Fog", "AU-GWW", "AU-Lox", "AU-TTE", "AU-Whr",
+              "AU-Wom", "AU-Ync", "CN-Cha", "CN-Dan", "CN-Din", "CN-Ha2", "CN-HaM", 
+              "CN-Qia", "JP-MBF", "MY-PSO")
+
+east_forcing = forcing_missing[forcing_missing$sitename %in% east_site,]
+bool_east = (as.data.frame(is.na(east_forcing)))
+print(apply(bool_east, 2, sum))
+
+print(apply(bool_east, 2, sum)/dim(east_forcing)[1])
+
+# despite the missing value in netrad represents only 12% of the total missing values,
+# the netrad is absent in 48% of the measurements.
+# in non-east site, the netrad is absent in 23% of the measurements. 
