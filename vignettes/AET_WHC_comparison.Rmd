@@ -1,0 +1,298 @@
+```{r message=FALSE}
+# library loading
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(here)
+library(scales) # for color gradient
+```
+
+```{r}
+# file loading for the vignette
+old_adf <- readRDS(here("data","budyko_old_whc.rds"))
+new_adf <- readRDS(here("data","budyko_new_whc.rds"))
+geo <- readRDS(here("data","site_coordinates.rds"))
+```
+
+## comparison with normalized AET
+
+```{r}
+delta_budyko <- data.frame(sitename = new_adf$sitename)
+# just for check
+#identical(new_adf$sitename, old_adf$sitename)
+
+delta_budyko$delta_aet <- (old_adf$aet/old_adf$prec_cond)-(new_adf$aet/new_adf$prec_cond)
+delta_budyko <- left_join(delta_budyko, geo, by = "sitename")
+delta_budyko$delta_whc <- old_adf$whc-new_adf$whc
+
+world <- map_data("world")
+
+europe <- world[world$long < 37 & world$long > -10 & world$lat < 73 & world$lat > 35,]
+
+delta_europe <- delta_budyko[delta_budyko$lon < 37 & delta_budyko$lon > -10 &
+                               delta_budyko$lat < 73 & delta_budyko$lat > 35,]
+
+america <- world[world$long < -50 & world$long > -170 & world$lat < 71 & world$lat > 20,]
+
+delta_america <- delta_budyko[delta_budyko$lon < -50 & delta_budyko$lon > -170 &
+                               delta_budyko$lat < 71 & delta_budyko$lat > 20,]
+
+```
+
+## WHC comparison
+
+```{r message=FALSE, warning=FALSE}
+# WHC new vs. old 
+data.frame(old_WHC = old_adf$whc, 
+           new_WHC = new_adf$whc) |>
+  ggplot(aes(old_WHC, new_WHC)) +
+  geom_point() +
+  geom_abline(slope = 1, intercept = 0, linetype = "dotted") +
+  xlim(0, NA) +
+  ylim(0, NA)
+```
+
+
+
+## AET comparison
+
+```{r warning=FALSE}
+# AET new vs. old 
+data.frame(old_AET = old_adf$aet/old_adf$prec_cond, 
+           new_AET = new_adf$aet/new_adf$prec_cond) |>
+  ggplot(aes(old_AET, new_AET)) +
+  geom_point() +
+  geom_abline(slope = 1, intercept = 0, linetype = "dotted") +
+  xlim(0, NA) +
+  ylim(0, NA)
+
+```
+
+## Delta WHC over delta AET
+
+```{r message=FALSE, warning=FALSE}
+
+ggplot(delta_budyko, aes(y= delta_aet, x = delta_whc)) + 
+  geom_point()
+  
+```
+
+
+## Visualize difference in AET and WHC
+
+I'll visualize the difference in AET and WHC globally and then zoomed in Europe due to the high number of sites
+
+
+```{r message=FALSE, warning=FALSE}
+ggplot(delta_budyko) +
+
+geom_map(data = world, map = world,
+         aes(long, lat, map_id = region),
+         color = "black", fill = "white", size = 0.1) +
+  geom_point( aes(lon, lat, color= delta_aet)) +
+  scale_color_viridis_c() +
+  ggtitle("Delta AET")
+
+```
+
+```{r message=FALSE, warning=FALSE}
+ggplot(delta_budyko) +
+  geom_map(data = world, map = world,
+         aes(long, lat, map_id = region),
+         color = "black", fill = "white", size = 0.1) +
+  geom_point( aes(lon, lat, color= delta_whc)) +
+  scale_color_viridis_c() +
+  ggtitle("Delta WHC")
+
+```
+
+
+
+```{r message=FALSE, warning=FALSE}
+ggplot(delta_europe) +
+ geom_map(data = europe, map = europe,
+         aes(long, lat, map_id = region),
+         color = "black", fill = "white", size = 0.1) +
+  geom_point( aes(lon, lat, color= delta_aet)) +
+  scale_color_viridis_c() +
+  ggtitle("Delta AET")
+```
+
+```{r message=FALSE, warning=FALSE}
+ggplot(delta_europe) +
+  geom_map(data = europe, map = europe,
+         aes(long, lat, map_id = region),
+         color = "black", fill = "white", size = 0.1) +
+  geom_point( aes(lon, lat, color= delta_whc)) +
+  scale_color_viridis_c() +
+  ggtitle("Delta WHC")
+
+```
+
+```{r message=FALSE, warning=FALSE}
+world <- map_data("world")
+
+ggplot(delta_budyko) +
+
+geom_map(data = world, map = world,
+         aes(long, lat, map_id = region),
+         color = "black", fill = "white", size = 0.1) +
+  geom_point( aes(lon, lat, color= delta_aet, size = delta_whc)) +
+  scale_color_viridis_c() +
+  ggtitle("Delta AET and WHC")
+
+```
+
+```{r message=FALSE, warning=FALSE}
+ggplot(delta_europe) +
+ geom_map(data = europe, map = europe,
+         aes(long, lat, map_id = region),
+         color = "black", fill = "white", size = 0.1) +
+  geom_point( aes(lon, lat, color= delta_aet,size = delta_whc )) +
+  scale_color_viridis_c() +
+  ggtitle("Delta AET and WHC")
+```
+
+```{r message=FALSE, warning=FALSE}
+ggplot(delta_america) +
+ geom_map(data = america, map = america,
+         aes(long, lat, map_id = region),
+         color = "black", fill = "white", size = 0.1) +
+  geom_point( aes(lon, lat, color= delta_aet,size = delta_whc )) +
+  scale_color_viridis_c() +
+  ggtitle("Delta AET and WHC")
+```
+
+## comparison with unnormalised AET
+
+```{r}
+delta_budyko <- data.frame(sitename = new_adf$sitename)
+# just for check
+#identical(new_adf$sitename, old_adf$sitename)
+
+delta_budyko$delta_aet <- old_adf$aet-new_adf$aet
+delta_budyko <- left_join(delta_budyko, geo, by = "sitename")
+delta_budyko$delta_whc <- old_adf$whc-new_adf$whc
+
+
+delta_europe <- delta_budyko[delta_budyko$lon < 37 & delta_budyko$lon > -10 &
+                               delta_budyko$lat < 73 & delta_budyko$lat > 35,]
+
+delta_america <- delta_budyko[delta_budyko$lon < -50 & delta_budyko$lon > -170 &
+                               delta_budyko$lat < 71 & delta_budyko$lat > 20,]
+
+```
+
+
+## AET comparison
+
+```{r warning=FALSE}
+# AET new vs. old 
+data.frame(old_AET = old_adf$aet, 
+           new_AET = new_adf$aet) |>
+  ggplot(aes(old_AET, new_AET)) +
+  geom_point() +
+  geom_abline(slope = 1, intercept = 0, linetype = "dotted") +
+  xlim(0, NA) +
+  ylim(0, NA)
+
+```
+
+## Delta WHC over delta AET
+
+```{r message=FALSE, warning=FALSE}
+
+ggplot(delta_budyko, aes(y= delta_aet, x = delta_whc)) + 
+  geom_point()
+  
+```
+
+
+## Visualize difference in AET and WHC
+
+I'll visualize the difference in AET and WHC globally and then zoomed in Europe due to the high number of sites
+
+
+```{r message=FALSE, warning=FALSE}
+world <- map_data("world")
+
+ggplot(delta_budyko) +
+
+geom_map(data = world, map = world,
+         aes(long, lat, map_id = region),
+         color = "black", fill = "white", size = 0.1) +
+  geom_point( aes(lon, lat, color= delta_aet)) +
+  scale_color_viridis_c() +
+  ggtitle("Delta AET")
+
+```
+
+```{r message=FALSE, warning=FALSE}
+ggplot(delta_budyko) +
+  geom_map(data = world, map = world,
+         aes(long, lat, map_id = region),
+         color = "black", fill = "white", size = 0.1) +
+  geom_point( aes(lon, lat, color= delta_whc)) +
+  scale_color_viridis_c() +
+  ggtitle("Delta WHC")
+
+```
+
+
+
+```{r message=FALSE, warning=FALSE}
+ggplot(delta_europe) +
+ geom_map(data = europe, map = europe,
+         aes(long, lat, map_id = region),
+         color = "black", fill = "white", size = 0.1) +
+  geom_point( aes(lon, lat, color= delta_aet)) +
+  scale_color_viridis_c() +
+  ggtitle("Delta AET")
+```
+
+```{r message=FALSE, warning=FALSE}
+ggplot(delta_europe) +
+  geom_map(data = europe, map = europe,
+         aes(long, lat, map_id = region),
+         color = "black", fill = "white", size = 0.1) +
+  geom_point( aes(lon, lat, color= delta_whc)) +
+  scale_color_viridis_c() +
+  ggtitle("Delta WHC")
+
+```
+
+```{r message=FALSE, warning=FALSE}
+world <- map_data("world")
+
+ggplot(delta_budyko) +
+
+geom_map(data = world, map = world,
+         aes(long, lat, map_id = region),
+         color = "black", fill = "white", size = 0.1) +
+  geom_point( aes(lon, lat, color= delta_aet, size = delta_whc)) +
+  scale_color_viridis_c() +
+  ggtitle("Delta AET and WHC")
+
+```
+
+```{r message=FALSE, warning=FALSE}
+ggplot(delta_europe) +
+ geom_map(data = europe, map = europe,
+         aes(long, lat, map_id = region),
+         color = "black", fill = "white", size = 0.1) +
+  geom_point( aes(lon, lat, color= delta_aet,size = delta_whc )) +
+  scale_color_viridis_c() +
+  ggtitle("Delta AET and WHC")
+```
+
+```{r message=FALSE, warning=FALSE}
+ggplot(delta_america) +
+ geom_map(data = america, map = america,
+         aes(long, lat, map_id = region),
+         color = "black", fill = "white", size = 0.1) +
+  geom_point( aes(lon, lat, color= delta_aet,size = delta_whc )) +
+  scale_color_viridis_c() +
+  ggtitle("Delta AET")
+```
+
+
