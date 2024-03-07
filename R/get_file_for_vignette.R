@@ -38,9 +38,39 @@ params_modl <- list(
   kc_jmax            = 0.41
 )
 
-
-# run p model
 old_driver <- readRDS(here("data","rsofun_driver_data_clean.rds"))
+
+# updating whc
+
+nc_file <- nc_open(here("data","whc_2m.nc"))
+
+whc = ncvar_get(nc_file, "whc_2m")
+lons = ncvar_get(nc_file, "lon")
+lats = ncvar_get(nc_file, "lat")
+
+geo <- old_driver |>
+  unnest(site_info) |>
+  select(lon  , lat)
+
+geo$sitename <- old_driver$sitename
+
+n <- 1 # parameter to select size of slice to average
+
+old_whc <- lapply(geo$sitename, function(x){
+  tmp <- geo[geo$sitename == x,]
+  lonid <- which(lons > tmp$lon)[1]
+  latid <- which(lats > tmp$lat)[1]
+  whc_grid <- whc[(lonid-n):(lonid+n), (latid-n):(latid+n)]
+  whc_site <- mean(as.numeric(whc_grid, na.rm=T))
+  return(whc_site)
+})
+
+old_whc = unlist(old_whc)
+
+for(i in 1:241){
+  old_driver$site_info[i][[1]][4] <- old_whc[i]
+}
+rm(whc) # for memory
 
 old_output <- rsofun::runread_pmodel_f(
   old_driver,
