@@ -37,6 +37,11 @@ america <- world[world$long < -50 & world$long > -170 & world$lat < 71 & world$l
 delta_america <- delta_budyko[delta_budyko$lon < -50 & delta_budyko$lon > -170 &
                                delta_budyko$lat < 71 & delta_budyko$lat > 20,]
 
+asia <- world[world$long < 175 & world$long > 75 & world$lat < 50 & world$lat > -50,]
+
+delta_asia <- delta_budyko[delta_budyko$lon < 175 & delta_budyko$lon > 75 &
+                               delta_budyko$lat < 50 & delta_budyko$lat > -50,]
+
 ```
 
 ## WHC comparison
@@ -80,8 +85,6 @@ ggplot(delta_budyko, aes(y= delta_aet, x = delta_whc)) +
 
 ## Visualize difference in AET and WHC
 
-I'll visualize the difference in AET and WHC globally and then zoomed in Europe due to the high number of sites
-
 
 ```{r message=FALSE, warning=FALSE}
 ggplot(delta_budyko) +
@@ -95,6 +98,8 @@ geom_map(data = world, map = world,
 
 ```
 
+## delta WHC globally
+
 ```{r message=FALSE, warning=FALSE}
 ggplot(delta_budyko) +
   geom_map(data = world, map = world,
@@ -106,7 +111,7 @@ ggplot(delta_budyko) +
 
 ```
 
-
+## Delta AET in Europe
 
 ```{r message=FALSE, warning=FALSE}
 ggplot(delta_europe) +
@@ -118,6 +123,8 @@ ggplot(delta_europe) +
   ggtitle("Delta AET")
 ```
 
+## Delta WHC in Europe
+
 ```{r message=FALSE, warning=FALSE}
 ggplot(delta_europe) +
   geom_map(data = europe, map = europe,
@@ -128,6 +135,8 @@ ggplot(delta_europe) +
   ggtitle("Delta WHC")
 
 ```
+
+## Delta WHC and AET combined
 
 ```{r message=FALSE, warning=FALSE}
 world <- map_data("world")
@@ -143,6 +152,8 @@ geom_map(data = world, map = world,
 
 ```
 
+## Deltas in Europe
+
 ```{r message=FALSE, warning=FALSE}
 ggplot(delta_europe) +
  geom_map(data = europe, map = europe,
@@ -153,6 +164,8 @@ ggplot(delta_europe) +
   ggtitle("Delta AET and WHC")
 ```
 
+## Deltas in America
+
 ```{r message=FALSE, warning=FALSE}
 ggplot(delta_america) +
  geom_map(data = america, map = america,
@@ -162,6 +175,19 @@ ggplot(delta_america) +
   scale_color_viridis_c() +
   ggtitle("Delta AET and WHC")
 ```
+
+## Asia
+
+```{r message=FALSE, warning=FALSE}
+ggplot(delta_asia) +
+ geom_map(data = asia, map = asia,
+         aes(long, lat, map_id = region),
+         color = "black", fill = "white", size = 0.1) +
+  geom_point( aes(lon, lat, color= delta_aet,size = delta_whc )) +
+  scale_color_viridis_c() +
+  ggtitle("Delta AET and WHC")
+```
+
 
 ## comparison with unnormalised AET
 
@@ -181,6 +207,8 @@ delta_europe <- delta_budyko[delta_budyko$lon < 37 & delta_budyko$lon > -10 &
 delta_america <- delta_budyko[delta_budyko$lon < -50 & delta_budyko$lon > -170 &
                                delta_budyko$lat < 71 & delta_budyko$lat > 20,]
 
+delta_asia <- delta_budyko[delta_budyko$lon < 175 & delta_budyko$lon > 75 &
+                               delta_budyko$lat < 50 & delta_budyko$lat > -50,]
 ```
 
 
@@ -227,6 +255,7 @@ geom_map(data = world, map = world,
 
 ```
 
+
 ```{r message=FALSE, warning=FALSE}
 ggplot(delta_budyko) +
   geom_map(data = world, map = world,
@@ -275,6 +304,8 @@ geom_map(data = world, map = world,
 
 ```
 
+## Europe
+
 ```{r message=FALSE, warning=FALSE}
 ggplot(delta_europe) +
  geom_map(data = europe, map = europe,
@@ -284,6 +315,8 @@ ggplot(delta_europe) +
   scale_color_viridis_c() +
   ggtitle("Delta AET and WHC")
 ```
+
+## America
 
 ```{r message=FALSE, warning=FALSE}
 ggplot(delta_america) +
@@ -295,4 +328,14 @@ ggplot(delta_america) +
   ggtitle("Delta AET")
 ```
 
+## Asia
 
+```{r message=FALSE, warning=FALSE}
+ggplot(delta_asia) +
+ geom_map(data = asia, map = asia,
+         aes(long, lat, map_id = region),
+         color = "black", fill = "white", size = 0.1) +
+  geom_point( aes(lon, lat, color= delta_aet,size = delta_whc )) +
+  scale_color_viridis_c() +
+  ggtitle("Delta AET and WHC")
+```
