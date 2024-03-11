@@ -3,7 +3,6 @@ library(reshape2)
 library(lubridate)
 library(ncdf4)
 library(here)
-source(here("R","read_meta_fdk.R"))
 
 files_csv = list.files(here("data-raw/CSV"))
 files_lsm = list.files(here("data-raw/LSM"))
@@ -20,7 +19,7 @@ nc = nc_open(here("data","cwdx80.nc"))
 lons = ncvar_get(nc, "lon")
 lats = ncvar_get(nc, "lat")
 S80 = ncvar_get(nc, "cwdx80")
-
+nc_close(nc)
 
 # for cycle
 df <- NULL
@@ -29,16 +28,15 @@ for(i in 1:length(sites)){
 
   site <- sites[[i]]
   csv <- file_csv[i]
+  LSM <- files_lsm[grep(site,files_lsm)][1]
 
-  meta <- suppressWarnings(
-    try(
-      read_meta_fdk(
-        site = site,
-        path = here("data-raw/LSM"),
-        meta_data = T
-      )
-    )
-  )
+  # acquire metadata
+  meta = nc_open(here("data-raw/LSM",LSM))
+
+  longitude  <- ncvar_get(meta, "longitude")
+  latitude  <- ncvar_get(meta, "latitude")
+  elevation  <- ncvar_get(meta, "elevation")
+  nc_close(meta)
 
   hhdf <- readr::read_csv(paste0(here("data-raw/CSV"),"/",csv))
 
