@@ -25,7 +25,7 @@ S80 = ncvar_get(nc, "cwdx80")
 # for cycle
 df <- NULL
 
-for(i in 1:dim(files_csv)[1]){
+for(i in 1:length(sites)){
 
   site <- sites[[i]]
   csv <- file_csv[i]
