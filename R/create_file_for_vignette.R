@@ -4,7 +4,7 @@ library(rsofun)
 library(here)
 library(ncdf4)
 
-# funuction used to create dataframes
+# function used to create dataframes
 get_annual_aet_pet <- function(df){
   df |>
     mutate(year = lubridate::year(date)) |>
@@ -38,9 +38,9 @@ params_modl <- list(
   kc_jmax            = 0.41
 )
 
-old_driver <- readRDS(here("data","rsofun_driver_data_clean.rds"))
+old_driver <- new_driver <- readRDS(here("data","new_driver_data.rds"))
 
-# updating whc
+# change whc to previous result
 
 nc_file <- nc_open(here("data","whc_2m.nc"))
 
@@ -67,10 +67,12 @@ old_whc <- lapply(geo$sitename, function(x){
 
 old_whc = unlist(old_whc)
 
-for(i in 1:241){
+for(i in 1:dim(old_driver)[1]){
   old_driver$site_info[i][[1]][4] <- old_whc[i]
 }
 rm(whc) # for memory
+
+# run p model
 
 old_output <- rsofun::runread_pmodel_f(
   old_driver,
@@ -117,42 +119,7 @@ whc <-  old_output |>
 
 old_adf$whc <- whc[[1]]
 
-# updating whc
 
-nc_file <- nc_open(here("data","cwdx80.nc"))
-
-whc = ncvar_get(nc_file, "cwdx80")
-lons = ncvar_get(nc_file, "lon")
-lats = ncvar_get(nc_file, "lat")
-
-geo <- old_driver |>
-  unnest(site_info) |>
-  select(lon  , lat)
-
-geo$sitename <- old_driver$sitename 
-
-n <- 1 # parameter to select size of slice to average
-
-new_whc <- lapply(geo$sitename, function(x){
-  geo <- geo[geo$sitename == x,]
-  lonid <- which(lons > geo$lon)[1]
-  latid <- which(lats > geo$lat)[1]
-  zroot_region <- whc[(lonid-n):(lonid+n), (latid-n):(latid+n)]
-  whc_site <- mean(as.numeric(zroot_region, na.rm=T))
-  return(whc_site)
-  })
-
-new_whc <- unlist(new_whc)
-
-new_driver <- old_driver
-
-for(i in 1:241){
-  new_driver$site_info[i][[1]][4] <- new_whc[i]
-}
-rm(whc) # for memnory
-```
-
-```{r warning=FALSE}
 # run p model
 new_output <- rsofun::runread_pmodel_f(
   new_driver,

@@ -25,7 +25,7 @@ S80 = ncvar_get(nc, "cwdx80")
 # for cycle
 df <- NULL
 
-for(i in 1:317){
+for(i in 1:10){
 
   site <- sites[[i]]
   csv <- file_csv[i]
@@ -132,4 +132,4 @@ for(i in 1:317){
   df <- rbind(df,tmp)
 }
 
-saveRDS(df, here("data","new_driver_data_uncompressed.rds"), compress="xz")
+saveRDS(df, here("data","new_driver_data.rds"), compress="xz")
