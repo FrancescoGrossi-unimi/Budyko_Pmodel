@@ -12,6 +12,10 @@ library(scales) # for color gradient
 old_adf <- readRDS(here("data","budyko_old_whc.rds"))
 new_adf <- readRDS(here("data","budyko_new_whc.rds"))
 geo <- readRDS(here("data","site_coordinates.rds"))
+
+# the site "US-Lin" present an error (whc of 3700)
+new_adf <- new_adf[!(new_adf$sitename== "US-Lin"),]
+old_adf <- old_adf[!(old_adf$sitename== "US-Lin"),]
 ```
 
 ## comparison with normalized AET
