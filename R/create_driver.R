@@ -32,7 +32,6 @@ for(i in 1:length(sites)){
 
   # acquire metadata
   meta = nc_open(here("data-raw/LSM",LSM))
-
   longitude  <- ncvar_get(meta, "longitude")
   latitude  <- ncvar_get(meta, "latitude")
   elevation  <- ncvar_get(meta, "elevation")
@@ -79,23 +78,19 @@ for(i in 1:length(sites)){
       tmin = min(TA_F_MDS)
     )
 
-
   # Creating driver object  ---------------
 
-  site_lon = meta[[1]]$longitude
-  site_lat = meta[[1]]$latitude
-
-  lonid = which(lons > site_lon)[1]-1
-  latid = which(lats > site_lat)[1]-1
-  n = 1
+  lonid = which(lons > longitude)[1]
+  latid = which(lats > latitude)[1]
+  n = 1 # parameter to select the slice to average
   S80_slice = S80[(lonid-n):(lonid+n), (latid-n):(latid+n)]
   whc_site = mean(as.numeric(S80_slice, na.rm=T))
 
 
   site_info = list(tibble(
-    lon=meta[[1]]$longitude,
-    lat=meta[[1]]$latitude,
-    elv = meta[[1]]$elevation,
+    lon= longitude,
+    lat= latitude,
+    elv =  elevation,
     whc = whc_site))
 
   forcing = ddf_24hr_mean |>
