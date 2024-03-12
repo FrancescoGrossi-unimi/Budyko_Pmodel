@@ -25,6 +25,16 @@ get_annual_prec_cond <- function(df){
     summarise(prec_cond = mean(prec_cond))
 }
 
+get_annual_ET <-  function(df){
+  df |>
+    mutate(year = lubridate::year(date)) |>
+    group_by(year) |>
+    summarise(valid_days   = sum(!is.na(ET)),
+              ET   = sum(ET,na.rm=TRUE)) |>
+    ungroup() |>
+    summarise(ET = sum(ET/sum(valid_days)))
+}
+
 # paramter for p model
 params_modl <- list(
   kphio              = 0.04998,    # setup ORG in Stocker et al. 2020 GMD
@@ -38,7 +48,7 @@ params_modl <- list(
   kc_jmax            = 0.41
 )
 
-old_driver <- new_driver <- readRDS(here("data","new_driver_data.rds"))
+old_driver <- new_driver <- readRDS(here("data","new_driver_data_obs.rds"))
 
 # change whc to previous result
 
@@ -90,8 +100,7 @@ old_output <- old_output |>
 old_adf <- old_output |>
   mutate(old_adf = purrr::map(data, ~get_annual_aet_pet(.))) |>
   unnest(old_adf) |>
-  select(sitename, aet, pet)
-
+  select(sitename, aet,pet)
 
 old_adf <- old_driver |>
   unnest(forcing) |>
@@ -119,6 +128,14 @@ whc <-  old_output |>
 
 old_adf$whc <- whc[[1]]
 
+old_adf <- old_driver |>
+  mutate(ET = purrr::map(forcing, ~get_annual_ET(.))) |>
+  unnest(ET) |>
+  select(sitename, ET) |>
+  right_join(
+    old_adf,
+    by = "sitename"
+  )
 
 # run p model
 new_output <- rsofun::runread_pmodel_f(
@@ -138,7 +155,6 @@ new_adf <- new_output |>
   mutate(new_adf = purrr::map(data, ~get_annual_aet_pet(.))) |>
   unnest(new_adf) |>
   select(sitename, aet, pet)
-
 
 new_adf <- new_driver |>
   unnest(forcing) |>
@@ -166,6 +182,15 @@ whc <-  new_output |>
 
 new_adf$whc <- whc[[1]]
 
-saveRDS(old_adf,here("data","budyko_old_whc.rds"))
-saveRDS(new_adf,here("data","budyko_new_whc.rds"))
+new_adf <- new_driver |>
+  mutate(ET = purrr::map(forcing, ~get_annual_ET(.))) |>
+  unnest(ET) |>
+  select(sitename, ET) |>
+  right_join(
+    new_adf,
+    by = "sitename"
+  )
+
+saveRDS(old_adf,here("data","budyko_old_whc_ET.rds"))
+saveRDS(new_adf,here("data","budyko_new_whc_ET.rds"))
 saveRDS(geo,here("data","site_coordinates.rds"))
