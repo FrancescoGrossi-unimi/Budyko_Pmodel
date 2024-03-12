@@ -3,6 +3,8 @@ library(reshape2)
 library(lubridate)
 library(ncdf4)
 library(here)
+library(cwd)
+source(here("R","read_meta_fdk.R"))
 
 files_csv = list.files(here("data-raw/CSV"))
 files_lsm = list.files(here("data-raw/LSM"))
@@ -19,7 +21,6 @@ nc = nc_open(here("data","cwdx80.nc"))
 lons = ncvar_get(nc, "lon")
 lats = ncvar_get(nc, "lat")
 S80 = ncvar_get(nc, "cwdx80")
-nc_close(nc)
 
 # for cycle
 df <- NULL
@@ -28,20 +29,28 @@ for(i in 1:length(sites)){
 
   site <- sites[[i]]
   csv <- file_csv[i]
-  LSM <- files_lsm[grep(site,files_lsm)][1]
 
   # acquire metadata
-  meta = nc_open(here("data-raw/LSM",LSM))
-  longitude  <- ncvar_get(meta, "longitude")
-  latitude  <- ncvar_get(meta, "latitude")
-  elevation  <- ncvar_get(meta, "elevation")
-  nc_close(meta)
+
+  meta <- suppressWarnings(
+    try(
+      read_meta_fdk(
+        site = site,
+        path = here("data-raw/LSM"),
+        meta_data = T
+      )
+    )
+  )
+
+  longitude  <- meta[[1]]$longitude
+  latitude  <- meta[[1]]$latitude
+  elevation  <- meta[[1]]$elevation
 
   hhdf <- readr::read_csv(paste0(here("data-raw/CSV"),"/",csv))
 
-  # some csv don't have GPP_DT_VUT_REF, so the element will be skipped if absent
+  # if LE_CORR not present skip the site
 
-  if (!("GPP_DT_VUT_REF" %in% colnames(hhdf))) next
+  if (!("LE_CORR" %in% colnames(hhdf))) next
 
   # Add date and time columns to hhdf for easier further processing.
   # ---------------------------------------------------------
@@ -49,7 +58,7 @@ for(i in 1:length(sites)){
     mutate(time = lubridate::as_datetime(as.character(TIMESTAMP_START), tz = "GMT", format="%Y%m%d%H%M")) |>
     mutate(date = lubridate::as_date(time))
 
-  #add NERTRAD if absent
+  #add NERTRAD and other columns if absent
 
   if (!("NETRAD" %in% colnames(hhdf))) {
     hhdf$NETRAD = NA
@@ -59,15 +68,20 @@ for(i in 1:length(sites)){
     hhdf$FPAR = NA
   }
 
-  # Aggregate to daily 24-hr means  ----------------------------------------------------------
+  if (!("GPP_DT_VUT_REF" %in% colnames(hhdf))) {
+    hhdf$GPP_DT_VUT_REF = NA
+  }
+
+  # Aggregate to daily 24-hr means  -----
   ddf_24hr_mean <-
     try(
       hhdf |>
         group_by(date) |>
         select(time, date, TA_F_MDS, VPD_F_MDS, SW_IN_F_MDS, NETRAD, PA_F, P_F,
-               CO2_F_MDS, GPP_DT_VUT_REF,FPAR) |>
-        summarize_all(.funs = mean)
-    )
+               CO2_F_MDS, GPP_DT_VUT_REF,FPAR,LE_CORR) |>
+        summarize_all(.funs = mean, na.rm = TRUE)
+    ) |>
+    mutate(LE_CORR = convert_et(LE_CORR,TA_F_MDS,PA_F*1000)) #pressure is in kPa
 
   # tmax and tmin
   tmaxmin <-
@@ -85,7 +99,6 @@ for(i in 1:length(sites)){
   n = 1 # parameter to select the slice to average
   S80_slice = S80[(lonid-n):(lonid+n), (latid-n):(latid+n)]
   whc_site = mean(as.numeric(S80_slice, na.rm=T))
-
 
   site_info = list(tibble(
     lon= longitude,
@@ -111,7 +124,8 @@ for(i in 1:length(sites)){
       fapar = FPAR,
       co2 = CO2_F_MDS,
       ccov = 0,
-      gpp = GPP_DT_VUT_REF
+      gpp = GPP_DT_VUT_REF,
+      ET = LE_CORR
     ) |>
     mutate(gpp = gpp*86400/1e6*12)  |>    # convert [umol m-2 s-1] to [gC m-2 day-1]
     list()
@@ -125,4 +139,4 @@ for(i in 1:length(sites)){
   df <- rbind(df,tmp)
 }
 
-saveRDS(df, here("data","new_driver_data.rds"), compress="xz")
+saveRDS(df, here("data","new_driver_data_obs.rds"), compress="xz")
