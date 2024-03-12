@@ -1,3 +1,6 @@
+# this script is the merge of create_driver and create_file for vignette
+# the final output will be the two plots that compare the observed and predicted ET with different whc
+
 library(tidyverse)
 library(reshape2)
 library(lubridate)
@@ -351,7 +354,7 @@ geo <- readRDS(here("data","site_coordinates.rds"))
 ggplot(old_adf,aes(x= ET,y=aet)) +
   geom_point() +
   geom_abline(slope = 1, intercept = 0, linetype = "dotted") +
-  labs(title = "Evapotranspiration vs predicted AET with old WHC",
+  labs(title = "Evapotranspiration vs predicted AET with new WHC",
        subtitle = paste0("R^2 = ",cor(old_adf$ET,old_adf$aet, use = "complete.obs")^2))
 
 ggplot(new_adf,aes(x= ET,y=aet)) +
