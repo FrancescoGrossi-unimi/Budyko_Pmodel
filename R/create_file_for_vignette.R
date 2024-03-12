@@ -27,12 +27,13 @@ get_annual_prec_cond <- function(df){
 
 get_annual_ET <-  function(df){
   df |>
+
     mutate(year = lubridate::year(date)) |>
     group_by(year) |>
     summarise(valid_days   = sum(!is.na(ET)),
               ET   = sum(ET,na.rm=TRUE)) |>
     ungroup() |>
-    summarise(ET = sum(ET/sum(valid_days)))
+    summarise(ET = sum(ET*valid_days/365)/(sum(valid_days/365)))
 }
 
 # paramter for p model
